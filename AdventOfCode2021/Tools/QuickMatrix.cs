@@ -513,6 +513,30 @@ public class QuickMatrix
         return result;
     }
 
+    public List<CellInfo> GetByFloodFill(Point position, TouchingMode touchingMode, string wall)
+    {
+        // floodfill using BFS like pile
+        HashSet<CellInfo> added = [];
+        Queue<Point> positionToReview = new();
+        positionToReview.Enqueue(position);
+        while (positionToReview.Count > 0)
+        {
+            Point currentPosition = positionToReview.Dequeue();
+            if (Cell(currentPosition).IsValid && Cell(currentPosition).StringVal != wall && !added.Contains(Cell(currentPosition)))
+            {
+                added.Add(Cell(currentPosition));
+                foreach (CellInfo neighbor in GetNeighbours(currentPosition, touchingMode))
+                {
+                    if (neighbor.StringVal != wall && !added.Contains(neighbor))
+                    {
+                        positionToReview.Enqueue(neighbor.Position);
+                    }
+                }
+            }
+        }
+        return [.. added];
+    }
+
     public override string ToString()
     {
         return string.Join("\\", Rows.Select(r => string.Join("", r.Select(c => c.StringVal))));
