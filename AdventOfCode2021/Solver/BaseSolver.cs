@@ -110,15 +110,15 @@ internal abstract partial class BaseSolver
             string testId = ExtractSampleIdRegex().Match(Path.GetFileNameWithoutExtension(ds.TestFileName)).Groups["TestID"].Value;
             if (string.IsNullOrEmpty(answer))
             {
-                results.Add($"SAMPLE {testId} HAS BEEN SKIPPED !");
+                results.Add(ColorString($"SAMPLE {testId} HAS BEEN SKIPPED", Color.BrightBlue));
             }
             else if (answer == ds.RoundIdAnswers[(int)roundId])
             {
-                results.Add($"SAMPLE {testId} PASSED: {answer} found in {GetProperUnitAndRounding(_stopwatch.Elapsed.TotalMilliseconds)}");
+                results.Add($"{ColorString($"SAMPLE {testId} PASSED:", Color.Green)} {ColorString(answer, Color.Yellow)} found in {GetProperUnitAndRounding(_stopwatch.Elapsed.TotalMilliseconds)}");
             }
             else
             {
-                results.Add($"SAMPLE {testId} FAILED: Found {answer} instead of {ds.RoundIdAnswers[(int)roundId]}");
+                results.Add($"{ColorString($"SAMPLE {testId} FAILED:", Color.Red)} Found {ColorString(answer, Color.Yellow)} instead of {ColorString(ds.RoundIdAnswers[(int)roundId], Color.Green)} in {GetProperUnitAndRounding(_stopwatch.Elapsed.TotalMilliseconds)}");
                 allTestPassed = false;
             }
         }
@@ -150,7 +150,7 @@ internal abstract partial class BaseSolver
         _puzzleInput = _challengeData;
         if (_challengeData.Count == 0)
         {
-            resultString = $"NO CHALLENGE DATA FOUND ! Please make sure you save your puzzle input into Data\\Day{day:00}\\Challenge.txt !";
+            resultString = ColorString($"NO CHALLENGE DATA FOUND ! Please make sure you save your puzzle input into Data\\Day{day:00}\\Challenge.txt !", Color.Red);
             return false;
         }
         _stopwatch.Restart();
@@ -158,11 +158,11 @@ internal abstract partial class BaseSolver
         _stopwatch.Stop();
         if (string.IsNullOrEmpty(answer))
         {
-            resultString = $"CHALLENGE {(roundId == Part.PartOne ? 1 : 2)} HAS BEEN SKIPPED !";
+            resultString = ColorString($"CHALLENGE {(roundId == Part.PartOne ? 1 : 2)} HAS BEEN SKIPPED !", Color.BrightBlue);
         }
         else
         {
-            resultString = $"{answer} found in {GetProperUnitAndRounding(_stopwatch.Elapsed.TotalMilliseconds)}";
+            resultString = $"{ColorString(answer, Color.Yellow)} found in {GetProperUnitAndRounding(_stopwatch.Elapsed.TotalMilliseconds)}";
         }
         return true;
     }
@@ -189,7 +189,7 @@ internal abstract partial class BaseSolver
         answer2 = answer2[^answerLength..];
 
         // Done
-        return $"{day:00}) {title}  :  Part 1 => {answer1}    Part 2 => {answer2}";
+        return $"{day:00}) {title}  :  Part 1 => {ColorString(answer1, Color.Green)}    Part 2 => {ColorString(answer2, Color.Green)}";
     }
 
     private static string GetProperUnitAndRounding(double totalMilliseconds)
@@ -220,7 +220,32 @@ internal abstract partial class BaseSolver
         }
 
         // Done
-        return $"{Math.Round(duration, nbrOfDecimals)} {unit}";
+        return ColorString($"{Math.Round(duration, nbrOfDecimals)} {unit}", Color.BrightCyan);
+    }
+
+    private enum Color
+    {
+        Black = 30,
+        Red = 31,
+        Green = 32,
+        Yellow = 33,
+        Blue = 34,
+        Magenta = 35,
+        Cyan = 36,
+        White = 37,
+        BrightBlack = 90,
+        BrightRed = 91,
+        BrightGreen = 92,
+        BrightYellow = 93,
+        BrightBlue = 94,
+        BrightMagenta = 95,
+        BrightCyan = 96,
+        BrightWhite = 97
+    }
+
+    private static string ColorString(string text, Color color)
+    {
+        return $"\u001b[{color:d}m{text}\u001b[0m";
     }
 
     public abstract string PuzzleTitle { get; }
