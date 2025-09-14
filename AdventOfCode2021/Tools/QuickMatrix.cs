@@ -409,7 +409,12 @@ public class QuickMatrix
         List<string> result = [];
         foreach (List<CellInfo> row in Rows)
         {
-            result.Add(row.Aggregate("", (acc, cell) => acc + cell.StringVal));
+            string rowText = row.Aggregate("", (acc, cell) => acc + cell.StringVal);
+            if (string.IsNullOrEmpty(rowText))
+            {
+                rowText = row.Aggregate("", (acc, cell) => acc + cell.LongVal.ToString()[0]);
+            }
+            result.Add(rowText);
         }
         return result;
     }

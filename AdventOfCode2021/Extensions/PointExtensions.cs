@@ -32,6 +32,13 @@ public static class PointExtensions
     }
 
     /// <summary>
+    /// Creates a new instance of the current point with the same X and Y coordinates.
+    /// </summary>
+    /// <param name="point">The point to clone.</param>
+    /// <returns>A new point with the same coordinates as the current point.</returns>
+    public static Point Clone(this Point point) => new(point.X, point.Y);
+
+    /// <summary>
     /// Calculates the Euclidean distance from the current point to the origin (0, 0).
     /// </summary>
     /// <param name="point">The point.</param>
