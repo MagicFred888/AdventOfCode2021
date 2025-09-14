@@ -131,7 +131,7 @@ public class QuickMatrix
         {
             if (y == 0)
             {
-                ColCount = separator == string.Empty ? rawData.Max(v => v.Length) : rawData.Max(v => v.Split(separator).Length);
+                ColCount = separator == string.Empty ? rawData.Max(v => v.Length) : rawData.Max(v => v.Split(separator, removeEmpty ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None).Length);
                 RowCount = rawData.Count;
                 _puzzleInput = new CellInfo[ColCount, RowCount];
             }
