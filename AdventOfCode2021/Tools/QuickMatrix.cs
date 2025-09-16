@@ -13,6 +13,13 @@ public enum TouchingMode
     All
 }
 
+public enum DataType
+{
+    String,
+    Bool,
+    Long,
+}
+
 public class QuickMatrix
 {
     private bool[,] _touchingSearch;
@@ -26,7 +33,7 @@ public class QuickMatrix
         { TouchingMode.All, new() { new Point(-1, -1), new Point(0, -1), new Point(1, -1), new Point(-1, 0), new Point(1, 0), new Point(-1, 1), new Point(0, 1), new Point(1, 1) } }
     };
 
-    private CellInfo[,] _puzzleInput;
+    private CellInfo[,] _allCellInfo;
 
     public int ColCount { get; private set; }
 
@@ -40,7 +47,7 @@ public class QuickMatrix
 
     public QuickMatrix()
     {
-        _puzzleInput = new CellInfo[0, 0];
+        _allCellInfo = new CellInfo[0, 0];
         _touchingSearch = new bool[0, 0];
         ColCount = 0;
         RowCount = 0;
@@ -50,13 +57,13 @@ public class QuickMatrix
     {
         ColCount = col;
         RowCount = row;
-        _puzzleInput = new CellInfo[col, row];
+        _allCellInfo = new CellInfo[col, row];
         _touchingSearch = new bool[col, row];
         for (int y = 0; y < RowCount; y++)
         {
             for (int x = 0; x < ColCount; x++)
             {
-                _puzzleInput[x, y] = new CellInfo(x, y, defaultValue);
+                _allCellInfo[x, y] = new CellInfo(x, y, defaultValue);
             }
         }
 
@@ -68,13 +75,13 @@ public class QuickMatrix
     {
         ColCount = col;
         RowCount = row;
-        _puzzleInput = new CellInfo[col, row];
+        _allCellInfo = new CellInfo[col, row];
         _touchingSearch = new bool[col, row];
         for (int y = 0; y < RowCount; y++)
         {
             for (int x = 0; x < ColCount; x++)
             {
-                _puzzleInput[x, y] = new CellInfo(x, y, defaultValue);
+                _allCellInfo[x, y] = new CellInfo(x, y, defaultValue);
             }
         }
 
@@ -87,13 +94,13 @@ public class QuickMatrix
         // Extract data
         ColCount = rawData[0].Length;
         RowCount = rawData.Count;
-        _puzzleInput = new CellInfo[ColCount, RowCount];
+        _allCellInfo = new CellInfo[ColCount, RowCount];
         _touchingSearch = new bool[ColCount, RowCount];
         for (int y = 0; y < RowCount; y++)
         {
             for (int x = 0; x < ColCount; x++)
             {
-                _puzzleInput[x, y] = new CellInfo(x, y, rawData[y].Substring(x, 1) == trueValue);
+                _allCellInfo[x, y] = new CellInfo(x, y, rawData[y].Substring(x, 1) == trueValue);
             }
         }
 
@@ -105,18 +112,18 @@ public class QuickMatrix
     {
         ColCount = col;
         RowCount = row;
-        _puzzleInput = new CellInfo[col, row];
+        _allCellInfo = new CellInfo[col, row];
         _touchingSearch = new bool[col, row];
         for (int y = 0; y < RowCount; y++)
         {
             for (int x = 0; x < ColCount; x++)
             {
-                _puzzleInput[x, y] = new CellInfo(x, y, emptyCellsValue);
+                _allCellInfo[x, y] = new CellInfo(x, y, emptyCellsValue);
             }
         }
         foreach (Point p in filledCells)
         {
-            _puzzleInput[p.X, p.Y].StringVal = filledCellsValue;
+            _allCellInfo[p.X, p.Y].StringVal = filledCellsValue;
         }
 
         // Compute other properties
@@ -126,14 +133,14 @@ public class QuickMatrix
     public QuickMatrix(List<string> rawData, string separator = "", bool removeEmpty = false)
     {
         // Extract data
-        _puzzleInput = new CellInfo[0, 0];
+        _allCellInfo = new CellInfo[0, 0];
         for (int y = 0; y < rawData.Count; y++)
         {
             if (y == 0)
             {
                 ColCount = separator == string.Empty ? rawData.Max(v => v.Length) : rawData.Max(v => v.Split(separator, removeEmpty ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None).Length);
                 RowCount = rawData.Count;
-                _puzzleInput = new CellInfo[ColCount, RowCount];
+                _allCellInfo = new CellInfo[ColCount, RowCount];
             }
             string line = rawData[y];
             if (string.IsNullOrEmpty(separator))
@@ -141,7 +148,7 @@ public class QuickMatrix
                 // Each char in a new box
                 for (int x = 0; x < line.Length; x++)
                 {
-                    _puzzleInput[x, y] = new(x, y, line[x].ToString());
+                    _allCellInfo[x, y] = new(x, y, line[x].ToString());
                 }
             }
             else
@@ -150,7 +157,7 @@ public class QuickMatrix
                 string[] values = line.Split(separator, removeEmpty ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
                 for (int x = 0; x < values.Length; x++)
                 {
-                    _puzzleInput[x, y] = new(x, y, values[x]);
+                    _allCellInfo[x, y] = new(x, y, values[x]);
                 }
             }
         }
@@ -164,9 +171,16 @@ public class QuickMatrix
     {
         ColCount = data.Max(c => c.Position.X) + 1;
         RowCount = data.Max(c => c.Position.Y) + 1;
-        _puzzleInput = new CellInfo[ColCount, RowCount];
+        _allCellInfo = new CellInfo[ColCount, RowCount];
         _touchingSearch = new bool[ColCount, RowCount];
-        data.ForEach(c => _puzzleInput[c.Position.X, c.Position.Y] = c);
+        for (int x = 0; x < ColCount; x++)
+        {
+            for (int y = 0; y < RowCount; y++)
+            {
+                _allCellInfo[x, y] = new CellInfo(x, y, "");
+            }
+        }
+        data.ForEach(c => _allCellInfo[c.Position.X, c.Position.Y] = c);
         ComputeOtherProperties();
     }
 
@@ -178,7 +192,7 @@ public class QuickMatrix
         {
             for (int x = 0; x < ColCount; x++)
             {
-                clone._puzzleInput[x, y] = _puzzleInput[x, y].Clone();
+                clone._allCellInfo[x, y] = _allCellInfo[x, y].Clone();
             }
         }
         clone.ComputeOtherProperties();
@@ -225,18 +239,18 @@ public class QuickMatrix
 
     public void RotateCounterClockwise()
     {
-        int width = _puzzleInput.GetLength(0);
-        int height = _puzzleInput.GetLength(1);
+        int width = _allCellInfo.GetLength(0);
+        int height = _allCellInfo.GetLength(1);
         CellInfo[,] rotated = new CellInfo[height, width];
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                rotated[y, width - 1 - x] = new(y, width - 1 - x, _puzzleInput[x, y]);
+                rotated[y, width - 1 - x] = new(y, width - 1 - x, _allCellInfo[x, y]);
             }
         }
-        _puzzleInput = rotated;
+        _allCellInfo = rotated;
         ColCount = height;
         RowCount = width;
 
@@ -246,18 +260,18 @@ public class QuickMatrix
 
     public void RotateClockwise()
     {
-        int width = _puzzleInput.GetLength(0);
-        int height = _puzzleInput.GetLength(1);
+        int width = _allCellInfo.GetLength(0);
+        int height = _allCellInfo.GetLength(1);
         CellInfo[,] rotated = new CellInfo[height, width];
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                rotated[height - 1 - y, x] = new(height - 1 - y, x, _puzzleInput[x, y]);
+                rotated[height - 1 - y, x] = new(height - 1 - y, x, _allCellInfo[x, y]);
             }
         }
-        _puzzleInput = rotated;
+        _allCellInfo = rotated;
         ColCount = height;
         RowCount = width;
 
@@ -267,18 +281,18 @@ public class QuickMatrix
 
     public void Rotate180Degree()
     {
-        int width = _puzzleInput.GetLength(0);
-        int height = _puzzleInput.GetLength(1);
+        int width = _allCellInfo.GetLength(0);
+        int height = _allCellInfo.GetLength(1);
         CellInfo[,] rotated = new CellInfo[width, height];
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                rotated[width - 1 - x, height - 1 - y] = new(width - 1 - x, height - 1 - y, _puzzleInput[x, y]);
+                rotated[width - 1 - x, height - 1 - y] = new(width - 1 - x, height - 1 - y, _allCellInfo[x, y]);
             }
         }
-        _puzzleInput = rotated;
+        _allCellInfo = rotated;
 
         // Compute other properties
         ComputeOtherProperties();
@@ -286,17 +300,17 @@ public class QuickMatrix
 
     public void FlipHorizontal()
     {
-        int width = _puzzleInput.GetLength(0);
-        int height = _puzzleInput.GetLength(1);
+        int width = _allCellInfo.GetLength(0);
+        int height = _allCellInfo.GetLength(1);
         CellInfo[,] rotated = new CellInfo[width, height];
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                rotated[width - 1 - x, y] = new(width - 1 - x, y, _puzzleInput[x, y]);
+                rotated[width - 1 - x, y] = new(width - 1 - x, y, _allCellInfo[x, y]);
             }
         }
-        _puzzleInput = rotated;
+        _allCellInfo = rotated;
 
         // Compute other properties
         ComputeOtherProperties();
@@ -304,17 +318,17 @@ public class QuickMatrix
 
     public void FlipVertical()
     {
-        int width = _puzzleInput.GetLength(0);
-        int height = _puzzleInput.GetLength(1);
+        int width = _allCellInfo.GetLength(0);
+        int height = _allCellInfo.GetLength(1);
         CellInfo[,] rotated = new CellInfo[width, height];
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                rotated[x, height - 1 - y] = new(x, height - 1 - y, _puzzleInput[x, y]);
+                rotated[x, height - 1 - y] = new(x, height - 1 - y, _allCellInfo[x, y]);
             }
         }
-        _puzzleInput = rotated;
+        _allCellInfo = rotated;
 
         // Compute other properties
         ComputeOtherProperties();
@@ -322,17 +336,17 @@ public class QuickMatrix
 
     public void Transpose()
     {
-        int width = _puzzleInput.GetLength(0);
-        int height = _puzzleInput.GetLength(1);
+        int width = _allCellInfo.GetLength(0);
+        int height = _allCellInfo.GetLength(1);
         CellInfo[,] rotated = new CellInfo[height, width];
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                rotated[y, x] = new(y, x, _puzzleInput[x, y]);
+                rotated[y, x] = new(y, x, _allCellInfo[x, y]);
             }
         }
-        _puzzleInput = rotated;
+        _allCellInfo = rotated;
         ColCount = height;
         RowCount = width;
 
@@ -348,7 +362,7 @@ public class QuickMatrix
         {
             return new CellInfo(int.MinValue, int.MinValue, "");
         }
-        return _puzzleInput[x, y];
+        return _allCellInfo[x, y];
     }
 
     public string CellStr(Point p, string valueIfNull = "") => CellStr(p.X, p.Y, valueIfNull);
@@ -359,7 +373,7 @@ public class QuickMatrix
         {
             return valueIfNull;
         }
-        return _puzzleInput[x, y].StringVal;
+        return _allCellInfo[x, y].StringVal;
     }
 
     private void ComputeOtherProperties()
@@ -371,7 +385,7 @@ public class QuickMatrix
             List<CellInfo> row = [];
             for (int x = 0; x < ColCount; x++)
             {
-                row.Add(_puzzleInput[x, y]);
+                row.Add(_allCellInfo[x, y]);
             }
             Rows.Add(row);
         }
@@ -383,7 +397,7 @@ public class QuickMatrix
             List<CellInfo> col = [];
             for (int y = 0; y < RowCount; y++)
             {
-                col.Add(_puzzleInput[x, y]);
+                col.Add(_allCellInfo[x, y]);
             }
             Cols.Add(col);
         }
@@ -394,26 +408,33 @@ public class QuickMatrix
         {
             for (int x = 0; x < ColCount; x++)
             {
-                Cells.Add(_puzzleInput[x, y]);
+                Cells.Add(_allCellInfo[x, y]);
             }
         }
     }
 
     public void DebugPrint()
     {
-        Debug.WriteLine(string.Join("\r\n", GetDebugPrintString()));
+        DebugPrint(DataType.String);
     }
 
-    public List<string> GetDebugPrintString()
+    public void DebugPrint(DataType dataType)
+    {
+        Debug.WriteLine(string.Join("\r\n", GetDebugPrintString(dataType)));
+    }
+
+    public List<string> GetDebugPrintString(DataType dataType)
     {
         List<string> result = [];
         foreach (List<CellInfo> row in Rows)
         {
-            string rowText = row.Aggregate("", (acc, cell) => acc + cell.StringVal);
-            if (string.IsNullOrEmpty(rowText))
+            string rowText = dataType switch
             {
-                rowText = row.Aggregate("", (acc, cell) => acc + cell.LongVal.ToString()[0]);
-            }
+                DataType.String => row.Aggregate("", (acc, cell) => acc + cell.StringVal),
+                DataType.Bool => row.Aggregate("", (acc, cell) => acc + (cell.BoolVal ? "#" : " ")),
+                DataType.Long => row.Aggregate("", (acc, cell) => acc + cell.LongVal.ToString()),
+                _ => throw new NotImplementedException(),
+            };
             result.Add(rowText);
         }
         return result;
@@ -478,7 +499,7 @@ public class QuickMatrix
         foreach (CellInfo cell in newData.Cells)
         {
             Point targetPos = point.Add(cell.Position);
-            _puzzleInput[targetPos.X, targetPos.Y] = new CellInfo(targetPos, cell);
+            _allCellInfo[targetPos.X, targetPos.Y] = new CellInfo(targetPos, cell);
         }
         ComputeOtherProperties();
     }
